@@ -5,12 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Kategori extends Model
+class Rak extends Model
 {
     use HasFactory;
-    protected $table = 'kategori';
-    protected $fillable = ['nama_kategori'];
 
+    protected $table = 'rak';
+
+    protected $fillable = [
+        'nama_rak',
+    ];
+
+    /**
+     * Relasi ke produk jika ada.
+     * Asumsi: relasi satu rak dapat memiliki banyak produk.
+     */
     public function barang()
     {
         return $this->hasMany(Barang::class);
@@ -21,9 +29,8 @@ class Kategori extends Model
         return $this->hasMany(keluar::class);
     }
 
-
-    public function masuk()
+    public function pemindahan()
     {
-        return $this->hasMany(masuk::class);
+        return $this->hasMany(pemindahan::class);
     }
 }

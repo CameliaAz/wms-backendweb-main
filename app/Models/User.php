@@ -66,4 +66,14 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function keluar()
+    {
+        return $this->hasMany(keluar::class);
+    }
+
+    public function pemindahan()
+    {
+        return $this->hasMany(pemindahan::class);
+    }
 }

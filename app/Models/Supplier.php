@@ -11,8 +11,13 @@ class Supplier extends Model
     protected $table = 'supplier';
     protected $fillable = ['nama_supplier', 'kontak', 'alamat'];
 
-    public function pembelian()
+    public function barang()
     {
-        return $this->hasMany(Pembelian::class, 'id_supplier', 'id');
+        return $this->hasMany(Barang::class);
+    }
+
+    public function masuk()
+    {
+        return $this->hasMany(masuk::class);
     }
 }
