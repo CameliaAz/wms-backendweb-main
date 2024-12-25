@@ -14,4 +14,10 @@ class Kategori extends Model
     protected $fillable = [
         'nama_kat',
     ]; // Kolom yang dapat diisi secara mass-assignment
+
+    // Relasi: Satu kategori memiliki banyak barang
+    public function barang()
+    {
+        return $this->hasMany(Barang::class, 'id_kategori', 'id');
+    }
 }
