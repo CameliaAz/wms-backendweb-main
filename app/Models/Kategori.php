@@ -8,22 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Kategori extends Model
 {
     use HasFactory;
-    protected $table = 'kategori';
-    protected $fillable = ['nama_kategori'];
-
-    public function barang()
-    {
-        return $this->hasMany(Barang::class);
-    }
-
-    public function keluar()
-    {
-        return $this->hasMany(keluar::class);
-    }
-
-
-    public function masuk()
-    {
-        return $this->hasMany(masuk::class);
-    }
+    
+    // Nama tabel yang digunakan
+    protected $table = 'kategori'; 
+    protected $fillable = [
+        'nama_kat',
+    ]; // Kolom yang dapat diisi secara mass-assignment
 }

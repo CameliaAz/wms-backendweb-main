@@ -8,16 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Supplier extends Model
 {
     use HasFactory;
-    protected $table = 'supplier';
-    protected $fillable = ['nama_supplier', 'kontak', 'alamat'];
 
-    public function barang()
-    {
-        return $this->hasMany(Barang::class);
-    }
+    protected $table = 'supplier'; // Nama tabel yang digunakan
+    protected $fillable = [
+        'nama_sup',
+        'telepon',
+        'alamat',
+    ]; // Kolom yang dapat diisi secara mass-assignment
 
-    public function masuk()
+    public function barangMasuk()
     {
-        return $this->hasMany(masuk::class);
+        return $this->hasMany(BarangMasuk::class, 'id_supplier');
     }
 }

@@ -13,10 +13,27 @@ class KategoriSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('kategori')->insert([
-            ['id' => 1,'nama_kategori' => 'Skincare', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 2,'nama_kategori' => 'Makeup', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 3,'nama_kategori' => 'Haircare', 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $data = [
+            [
+                'id' => 3,
+                'nama_kat' => 'Haircare',
+                'created_at' => '2024-12-22 12:25:03',
+                'updated_at' => '2024-12-22 12:25:03',
+            ],
+            [
+                'id' => 4,
+                'nama_kat' => 'Parfum',
+                'created_at' => '2024-12-22 12:25:15',
+                'updated_at' => '2024-12-22 12:25:15',
+            ],
+            [
+                'id' => 5,
+                'nama_kat' => 'Bodycare',
+                'created_at' => '2024-12-22 12:25:31',
+                'updated_at' => '2024-12-22 12:25:31',
+            ],
+        ];
+
+        DB::table('kategori')->insert($data);
     }
 }

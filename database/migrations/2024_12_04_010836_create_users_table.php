@@ -16,8 +16,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('email', 100)->unique();
             $table->string('password', 255);
-            $table->enum('role', ['admin', 'staff', 'manager', 'supplier']);
-            $table->string('supplier_name', 100)->nullable();
+            $table->enum('role', ['admin', 'manager']);
             $table->timestamps();
         });
     }

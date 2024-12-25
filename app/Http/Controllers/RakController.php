@@ -7,91 +7,58 @@ use Illuminate\Http\Request;
 
 class RakController extends Controller
 {
-    /**
-     * Menampilkan semua rak.
-     */
+    // Menampilkan semua rak
     public function index()
     {
-        $rak = Rak::all();
-
-        return response()->json([
-            'message' => 'Data rak berhasil diambil.',
-            'data' => $rak,
-        ]);
+        $raks = Rak::all();
+        return response()->json($raks);
     }
 
-    /**
-     * Menambahkan rak baru.
-     */
+    // Menambahkan rak baru
     public function store(Request $request)
     {
         $request->validate([
             'nama_rak' => 'required|string|max:255',
+            'status' => 'required|in:avail,unavail',
         ]);
 
-        $rak = Rak::create($request->only('nama_rak'));
+        $rak = Rak::create([
+            'nama_rak' => $request->nama_rak,
+            'status' => $request->status,
+        ]);
 
-        return response()->json([
-            'message' => 'Rak berhasil ditambahkan.',
-            'data' => $rak,
-        ], 201);
+        return response()->json($rak, 201);
     }
 
-    /**
-     * Menampilkan detail rak berdasarkan ID.
-     */
+    // Menampilkan rak berdasarkan ID
     public function show($id)
     {
-        $rak = Rak::find($id);
-
-        if (!$rak) {
-            return response()->json(['message' => 'Rak tidak ditemukan.'], 404);
-        }
-
-        return response()->json([
-            'message' => 'Detail rak berhasil diambil.',
-            'data' => $rak,
-        ]);
+        $rak = Rak::findOrFail($id);
+        return response()->json($rak);
     }
 
-    /**
-     * Memperbarui data rak.
-     */
+    // Mengupdate rak
     public function update(Request $request, $id)
     {
-        $rak = Rak::find($id);
-
-        if (!$rak) {
-            return response()->json(['message' => 'Rak tidak ditemukan.'], 404);
-        }
+        $rak = Rak::findOrFail($id);
 
         $request->validate([
-            'nama_rak' => 'required|string|max:255',
+            'nama_rak' => 'sometimes|required|string|max:255',
+            'status' => 'sometimes|required|in:avail,unavail',
         ]);
 
-        $rak->update($request->only('nama_rak'));
+        $rak->update($request->all());
 
-        return response()->json([
-            'message' => 'Data rak berhasil diperbarui.',
-            'data' => $rak,
-        ]);
+        return response()->json($rak);
     }
 
-    /**
-     * Menghapus rak berdasarkan ID.
-     */
+    // Menghapus rak
     public function destroy($id)
     {
-        $rak = Rak::find($id);
-
-        if (!$rak) {
-            return response()->json(['message' => 'Rak tidak ditemukan.'], 404);
-        }
-
+        $rak = Rak::findOrFail($id);
         $rak->delete();
 
-        return response()->json([
-            'message' => 'Rak berhasil dihapus.',
-        ]);
+        return response()->json(['message' => 'Rak deleted successfully']);
     }
+
 }

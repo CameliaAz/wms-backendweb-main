@@ -7,94 +7,66 @@ use Illuminate\Http\Request;
 
 class KategoriController extends Controller
 {
-    /**
-     * Menampilkan daftar kategori.
-     */
+    // Menampilkan semua kategori
     public function index()
     {
         $kategori = Kategori::all();
         return response()->json($kategori);
     }
 
-    /**
-     * Menyimpan kategori baru.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nama_kategori' => 'required|string|max:255',
-        ]);
-
-        $kategori = Kategori::create([
-            'nama_kategori' => $request->nama_kategori,
-        ]);
-
-        return response()->json([
-            'message' => 'Kategori berhasil ditambahkan.',
-            'data' => $kategori,
-        ], 201);
-    }
-
-    /**
-     * Menampilkan kategori berdasarkan ID.
-     */
+    // Menampilkan detail kategori berdasarkan ID
     public function show($id)
     {
         $kategori = Kategori::find($id);
-
-        if (!$kategori) {
-            return response()->json([
-                'message' => 'Kategori tidak ditemukan.',
-            ], 404);
+        
+        if ($kategori) {
+            return response()->json($kategori);
+        } else {
+            return response()->json(['message' => 'Kategori not found'], 404);
         }
-
-        return response()->json($kategori);
     }
 
-    /**
-     * Memperbarui kategori.
-     */
+    // Menambah kategori baru
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nama_kat' => 'required|string|max:255',
+        ]);
+
+        $kategori = Kategori::create([
+            'nama_kat' => $request->nama_kat,
+        ]);
+
+        return response()->json($kategori, 201);
+    }
+
+    // Mengupdate data kategori
     public function update(Request $request, $id)
     {
         $kategori = Kategori::find($id);
 
-        if (!$kategori) {
-            return response()->json([
-                'message' => 'Kategori tidak ditemukan.',
-            ], 404);
+        if ($kategori) {
+            $request->validate([
+                'nama_kat' => 'sometimes|required|string|max:255',
+            ]);
+
+            $kategori->update($request->only(['nama_kat']));
+            return response()->json($kategori);
+        } else {
+            return response()->json(['message' => 'Kategori not found'], 404);
         }
-
-        $request->validate([
-            'nama_kategori' => 'required|string|max:255',
-        ]);
-
-        $kategori->update([
-            'nama_kategori' => $request->nama_kategori,
-        ]);
-
-        return response()->json([
-            'message' => 'Kategori berhasil diperbarui.',
-            'data' => $kategori,
-        ]);
     }
 
-    /**
-     * Menghapus kategori.
-     */
+    // Menghapus kategori
     public function destroy($id)
     {
         $kategori = Kategori::find($id);
 
-        if (!$kategori) {
-            return response()->json([
-                'message' => 'Kategori tidak ditemukan.',
-            ], 404);
+        if ($kategori) {
+            $kategori->delete();
+            return response()->json(['message' => 'Kategori deleted successfully']);
+        } else {
+            return response()->json(['message' => 'Kategori not found'], 404);
         }
-
-        $kategori->delete();
-
-        return response()->json([
-            'message' => 'Kategori berhasil dihapus.',
-        ]);
     }
 }

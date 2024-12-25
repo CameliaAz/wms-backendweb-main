@@ -5,18 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Gudang extends Model
+class Laporan extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'nama_gudang',
-        'rak_id',
-    ];
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class);
+    }
 
-    // Relasi dengan rak
     public function rak()
     {
-        return $this->belongsTo(Rak::class, 'rak_id', 'id');
+        return $this->belongsTo(Rak::class);
     }
 }

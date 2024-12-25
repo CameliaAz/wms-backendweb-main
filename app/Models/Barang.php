@@ -8,46 +8,44 @@ use Illuminate\Database\Eloquent\Model;
 class Barang extends Model
 {
     use HasFactory;
-
-    protected $table = 'barang';
-
+    protected $table = 'barang'; // Nama tabel yang digunakan
+    // Menambahkan properti $fillable untuk mencegah mass assignment vulnerability
     protected $fillable = [
-        'nama',
-        'kategori_id',
-        'supplier_id',
-        'stok',
-        'expired',
-        'harga_beli',
+        'nama_barang',
+        'id_kategori',
+        'varian',
+        'ukuran',
+        'deskripsi',
+        'gambar',
     ];
 
-    /**
-     * Relasi ke tabel Kategori.
-     */
+    // Relasi ke Kategori
     public function kategori()
     {
-        return $this->belongsTo(Kategori::class, 'kategori_id', 'id');
+        return $this->belongsTo(Kategori::class, 'id_kategori', 'id');
     }
 
-    /**
-     * Relasi ke tabel Supplier.
-     */
-    public function supplier()
+    // Relasi ke BarangMasuk
+    public function barangMasuk()
     {
-        return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
+        return $this->hasMany(BarangMasuk::class, 'id_barang', 'id');
     }
 
-    public function masuk()
+    // Relasi ke LokasiBarang
+    public function lokasiBarang()
     {
-        return $this->hasMany(masuk::class);
+        return $this->hasMany(LokasiBarang::class, 'id_barang', 'id');
     }
 
-    public function keluar()
+    // Relasi ke BarangPindah
+    public function barangPindah()
     {
-        return $this->hasMany(keluar::class);
+        return $this->hasMany(BarangPindah::class, 'id_barang', 'id');
     }
 
-    public function pemindahan()
+    // Relasi ke BarangKeluar
+    public function barangKeluar()
     {
-        return $this->hasMany(pemindahan::class);
+        return $this->hasMany(BarangKeluar::class, 'id_barang', 'id');
     }
 }

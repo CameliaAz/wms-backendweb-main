@@ -4,27 +4,31 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateSupplier extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('supplier', function (Blueprint $table) {
-            $table->id('id');
-            $table->string('nama', 255);
-            $table->text('alamat')->nullable();
-            $table->string('telepon', 255)->nullable();
+            $table->id();
+            $table->string('nama_sup');
+            $table->string('telepon');
+            $table->text('alamat');
             $table->timestamps();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('supplier');
     }
-};
+}

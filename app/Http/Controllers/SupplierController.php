@@ -2,95 +2,77 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Supplier;
+use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Menampilkan semua supplier
     public function index()
     {
-        $supplier = Supplier::all();
-        return response()->json($supplier);
+        $suppliers = Supplier::all();
+        return response()->json($suppliers);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // Menampilkan detail supplier berdasarkan ID
+    public function show($id)
     {
-        return view('supplier.create');
+        $supplier = Supplier::find($id);
+        
+        if ($supplier) {
+            return response()->json($supplier);
+        } else {
+            return response()->json(['message' => 'Supplier not found'], 404);
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Menambah supplier baru
     public function store(Request $request)
     {
         $request->validate([
-            'nama_supplier' => 'required|max:255',
-            'kontak' => 'required|max:50',
-            'alamat' => 'required',
+            'nama_sup' => 'required|string|max:255',
+            'telepon' => 'required|string|max:15',
+            'alamat' => 'required|string',
         ]);
 
-        $supplier = Supplier::create($request->all());
-        return response()->json(['message' => 'Supplier berhasil ditambahkan', 'data' => $supplier], 201);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $supplier = Supplier::find($id);
-        if (!$supplier) {
-            return response()->json(['message' => 'Supplier tidak ditemukan'], 404);
-        }
-        return response()->json($supplier);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        $supplier = Supplier::findOrFail($id);
-        return view('supplier.edit', compact('supplier'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        $supplier = Supplier::find($id);
-        if (!$supplier) {
-            return response()->json(['message' => 'Supplier tidak ditemukan'], 404);
-        }
-
-        $request->validate([
-            'nama_supplier' => 'sometimes|max:255',
-            'kontak' => 'sometimes|max:50',
-            'alamat' => 'sometimes',
+        $supplier = Supplier::create([
+            'nama_sup' => $request->nama_sup,
+            'telepon' => $request->telepon,
+            'alamat' => $request->alamat,
         ]);
 
-        $supplier->update($request->all());
-        return response()->json(['message' => 'Supplier berhasil diperbarui', 'data' => $supplier]);
+        return response()->json($supplier, 201);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // Mengupdate data supplier
+    public function update(Request $request, $id)
     {
         $supplier = Supplier::find($id);
-        if (!$supplier) {
-            return response()->json(['message' => 'Supplier tidak ditemukan'], 404);
-        }
 
-        $supplier->delete();
-        return response()->json(['message' => 'Supplier berhasil dihapus']);
+        if ($supplier) {
+            $request->validate([
+                'nama_sup' => 'sometimes|required|string|max:255',
+                'telepon' => 'sometimes|required|string|max:15',
+                'alamat' => 'sometimes|required|string',
+            ]);
+
+            $supplier->update($request->only(['nama_sup', 'telepon', 'alamat']));
+            return response()->json($supplier);
+        } else {
+            return response()->json(['message' => 'Supplier not found'], 404);
+        }
+    }
+
+    // Menghapus supplier
+    public function destroy($id)
+    {
+        $supplier = Supplier::find($id);
+
+        if ($supplier) {
+            $supplier->delete();
+            return response()->json(['message' => 'Supplier deleted successfully']);
+        } else {
+            return response()->json(['message' => 'Supplier not found'], 404);
+        }
     }
 }

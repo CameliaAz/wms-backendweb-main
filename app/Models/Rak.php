@@ -9,28 +9,27 @@ class Rak extends Model
 {
     use HasFactory;
 
+    // Nama tabel
     protected $table = 'rak';
 
+    // Kolom yang dapat diisi (mass-assignable)
     protected $fillable = [
         'nama_rak',
+        'status',
     ];
 
-    /**
-     * Relasi ke produk jika ada.
-     * Asumsi: relasi satu rak dapat memiliki banyak produk.
-     */
-    public function barang()
+    public function lokasiBarang()
     {
-        return $this->hasMany(Barang::class);
+        return $this->hasMany(LokasiBarang::class);
     }
 
-    public function keluar()
+    public function barangPindah()
     {
-        return $this->hasMany(keluar::class);
+        return $this->hasMany(BarangPindah::class);
     }
 
-    public function pemindahan()
+    public function barangKeluar()
     {
-        return $this->hasMany(pemindahan::class);
+        return $this->hasMany(BarangKeluar::class);
     }
 }
