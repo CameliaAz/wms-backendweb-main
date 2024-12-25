@@ -18,10 +18,10 @@ class LokasiBarang extends Model
     ];
 
 
-    public function barangMasuk()
-{
-    return $this->belongsTo(BarangMasuk::class, 'id_barang_masuk');
-}
+//     public function barangMasuk()
+// {
+//     return $this->belongsTo(BarangMasuk::class, 'id_barang_masuk');
+// }
 
 public function rak()
 {

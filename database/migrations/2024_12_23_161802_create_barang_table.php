@@ -18,9 +18,10 @@ class CreateBarangTable extends Migration
             $table->string('ukuran'); // Ukuran barang
             $table->text('deskripsi'); // Deskripsi barang
             $table->string('gambar')->nullable(); // Gambar barang
+            // $table->decimal('harga', 10, 2); // Harga barang
             $table->timestamps(); // Kolom created_at dan updated_at
 
-            // Definisi foreign key
+            // Definisi foreign key untuk kategori
             $table->foreign('id_kategori')
                   ->references('id')
                   ->on('kategori')

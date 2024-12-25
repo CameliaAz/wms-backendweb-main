@@ -8,6 +8,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\RakController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\BarangMasukController;
 
 /*
 |---------------------------------------------------------------------------
@@ -52,3 +53,15 @@ Route::post('barang', [BarangController::class, 'store']);
 Route::get('barang/{id}', [BarangController::class, 'show']);
 Route::put('barang/{id}', [BarangController::class, 'update']);
 Route::delete('barang/{id}', [BarangController::class, 'destroy']);
+// Barang Routes
+Route::get('barang', [BarangController::class, 'index']);
+Route::post('barang', [BarangController::class, 'store']);
+Route::get('barang/{id}', [BarangController::class, 'show']);
+Route::put('barang/{id}', [BarangController::class, 'update']);
+Route::delete('barang/{id}', [BarangController::class, 'destroy']);
+// Barang Masuk Routes
+Route::get('barang-masuk', [BarangMasukController::class, 'index']); // Mendapatkan semua barang masuk
+Route::post('barang-masuk', [BarangMasukController::class, 'store']); // Menambahkan barang masuk
+Route::get('barang-masuk/{id}', [BarangMasukController::class, 'show']); // Mendapatkan detail barang masuk
+Route::put('barang-masuk/{id}', [BarangMasukController::class, 'update']);
+Route::delete('barang-masuk/{id}', [BarangMasukController::class, 'destroy']); // Menghapus barang masuk

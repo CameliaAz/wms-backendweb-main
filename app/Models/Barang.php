@@ -34,6 +34,11 @@ class Barang extends Model
         return $this->hasMany(BarangMasuk::class, 'id_barang', 'id'); // Barang has many BarangMasuk
     }
 
+    public function rak()
+    {
+        return $this->hasMany(Rak::class, 'id_barang');
+    }
+
     // Relasi ke LokasiBarang
     public function lokasiBarang()
     {
