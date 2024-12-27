@@ -54,7 +54,7 @@ class BarangPindahController extends Controller
         return response()->json($barangPindah);
     }
 
-    public function store(Request $request)
+        public function store(Request $request)
     {
         $request->validate([
             'id_barang' => 'required|exists:barang,id',
@@ -69,32 +69,52 @@ class BarangPindahController extends Controller
         $lokasiTujuan = Rak::findOrFail($request->id_lokasi_tujuan);
         $barang = Barang::findOrFail($request->id_barang);
 
-        // Check if enough stock is available at the source location
+        // Check if the source location contains the same barang, and if enough stock is available
         if ($lokasiSumber->id_barang !== $barang->id || $lokasiSumber->jumlah < $request->jumlah_pindah) {
-            return response()->json(['message' => 'Stock is insufficient or invalid at the source location.'], 400);
+            return response()->json(['message' => 'Stok tidak mencukupi atau tidak valid di lokasi sumber.'], 400);
         }
 
-        // Check if the target location is already occupied by another item
-        if ($lokasiTujuan->id_barang !== null) {
-            return response()->json(['message' => 'Target rak is already occupied by another item.'], 400);
+        // If the target location is already occupied by another item, it should not be allowed to move the item
+        if ($lokasiTujuan->id_barang !== null && $lokasiTujuan->id_barang !== $barang->id) {
+            return response()->json(['message' => 'Rak tujuan sudah terisi oleh barang lain.'], 400);
         }
 
-        // Update the stock at the source location
-        $lokasiSumber->jumlah -= $request->jumlah_pindah;
-        $lokasiSumber->status = $lokasiSumber->jumlah > 0 ? 'available' : 'not_available';
+        // If the item in the source and target location are the same, allow the transfer
+        if ($lokasiTujuan->id_barang === $barang->id) {
+            // Update the stock at the source location
+            $lokasiSumber->jumlah -= $request->jumlah_pindah;
+            $lokasiSumber->status = $lokasiSumber->jumlah > 0 ? 'available' : 'not_available';
 
-        // If the source rak is now empty, clear the id_barang (remove the item from the rak)
-        if ($lokasiSumber->jumlah === 0) {
-            $lokasiSumber->id_barang = null;
+            // If the source rak is now empty, clear the id_barang (remove the item from the rak)
+            if ($lokasiSumber->jumlah === 0) {
+                $lokasiSumber->id_barang = null;
+            }
+
+            $lokasiSumber->save();
+
+            // Update the stock at the target location
+            $lokasiTujuan->jumlah += $request->jumlah_pindah;
+            $lokasiTujuan->status = 'available'; // Assuming target rak will be available
+            $lokasiTujuan->save();
+        } else {
+            // If the target location is empty, move the item there
+            // Update the stock at the target location and assign the item
+            $lokasiTujuan->id_barang = $request->id_barang; // Assign the item to the target rak
+            $lokasiTujuan->jumlah += $request->jumlah_pindah;
+            $lokasiTujuan->status = 'available';
+            $lokasiTujuan->save();
+
+            // Update the stock at the source location
+            $lokasiSumber->jumlah -= $request->jumlah_pindah;
+            $lokasiSumber->status = $lokasiSumber->jumlah > 0 ? 'available' : 'not_available';
+
+            // If the source rak is now empty, clear the id_barang (remove the item from the rak)
+            if ($lokasiSumber->jumlah === 0) {
+                $lokasiSumber->id_barang = null;
+            }
+
+            $lokasiSumber->save();
         }
-
-        $lokasiSumber->save();
-
-        // Update the stock at the target location
-        $lokasiTujuan->id_barang = $request->id_barang; // Assign the item to the target rak
-        $lokasiTujuan->jumlah += $request->jumlah_pindah;
-        $lokasiTujuan->status = 'available'; // Assuming target rak will be available
-        $lokasiTujuan->save();
 
         // Create the BarangPindah entry
         $barangPindah = BarangPindah::create($request->all());
@@ -116,49 +136,61 @@ class BarangPindahController extends Controller
             'id_user' => 'required|exists:users,id',
             'jumlah_pindah' => 'required|integer|min:1',
         ]);
-
+    
         // Find the BarangPindah record
         $barangPindah = BarangPindah::findOrFail($id);
         $oldJumlahPindah = $barangPindah->jumlah_pindah;
-
-        // Update the BarangPindah record
-        $barangPindah->update($request->all());
-
+    
         // Handle the stock update logic
         $lokasiSumber = Rak::findOrFail($request->id_lokasi_sumber);
         $lokasiTujuan = Rak::findOrFail($request->id_lokasi_tujuan);
         $barang = Barang::findOrFail($request->id_barang);
-
-        // Check if enough stock is available at the source location
-        if ($lokasiSumber->id_barang !== $barang->id || $lokasiSumber->jumlah < $request->jumlah_pindah) {
-            return response()->json(['message' => 'Stock is insufficient or invalid at the source location.'], 400);
+    
+        // First, validate if the source location has enough stock after considering the change
+        if ($lokasiSumber->id_barang !== $barang->id || $lokasiSumber->jumlah + $oldJumlahPindah < $request->jumlah_pindah) {
+            return response()->json(['message' => 'Stok tidak mencukupi atau tidak valid di lokasi sumber.'], 400);
         }
-
-        // Check if the target location is already occupied by another item
+    
+        // If the target location is already occupied by another item, it should not be allowed to move the item
         if ($lokasiTujuan->id_barang !== null && $lokasiTujuan->id_barang !== $barang->id) {
-            return response()->json(['message' => 'Target rak is already occupied by another item.'], 400);
+            return response()->json(['message' => 'Rak tujuan sudah terisi oleh barang lain.'], 400);
         }
-
-        // Update the stock at the source location
-        $lokasiSumber->jumlah -= $request->jumlah_pindah - $oldJumlahPindah;
+    
+        // Rollback the stock in the source location for the previous quantity
+        $lokasiSumber->jumlah += $oldJumlahPindah;  // Add the old amount back to the source location
+    
+        // Now, decrease the stock based on the new quantity
+        $lokasiSumber->jumlah -= $request->jumlah_pindah;
+    
+        // Update the status of the source location
         $lokasiSumber->status = $lokasiSumber->jumlah > 0 ? 'available' : 'not_available';
         $lokasiSumber->save();
-
-        // Update the stock at the target location
+    
+        // If the target location is empty, move the item there
         if ($lokasiTujuan->id_barang === null) {
-            $lokasiTujuan->id_barang = $request->id_barang;
+            $lokasiTujuan->id_barang = $request->id_barang; // Assign the item to the target rak
         }
+    
+        // Update the stock at the target location based on the new quantity
         $lokasiTujuan->jumlah += $request->jumlah_pindah - $oldJumlahPindah;
         $lokasiTujuan->status = 'available';
         $lokasiTujuan->save();
-
+    
+        // Update the BarangPindah record with the new data
+        $barangPindah->update([
+            'id_lokasi_sumber' => $request->id_lokasi_sumber,
+            'id_lokasi_tujuan' => $request->id_lokasi_tujuan,
+            'jumlah_pindah' => $request->jumlah_pindah,
+            'id_user' => $request->id_user,
+        ]);
+    
         return response()->json([
             'message' => 'Barang pindah berhasil diperbarui.',
             'barang_pindah' => $barangPindah,
             'lokasi_sumber' => $lokasiSumber,
             'lokasi_tujuan' => $lokasiTujuan,
         ]);
-    }
+    }    
 
     // Delete Barang Pindah
     public function destroy($id)
@@ -170,13 +202,22 @@ class BarangPindahController extends Controller
         $lokasiSumber = Rak::findOrFail($barangPindah->id_lokasi_sumber);
         $lokasiTujuan = Rak::findOrFail($barangPindah->id_lokasi_tujuan);
 
-        // Rollback the stock changes at the source and target locations
+        // Rollback the stock changes at the source location
         $lokasiSumber->jumlah += $barangPindah->jumlah_pindah;
         $lokasiSumber->status = 'available';
         $lokasiSumber->save();
 
+        // Rollback the stock changes at the target location
         $lokasiTujuan->jumlah -= $barangPindah->jumlah_pindah;
-        $lokasiTujuan->status = $lokasiTujuan->jumlah > 0 ? 'available' : 'not_available';
+
+        // Update the target location status and remove item if stock is 0
+        if ($lokasiTujuan->jumlah <= 0) {
+            $lokasiTujuan->jumlah = 0; // Ensure no negative stock
+            $lokasiTujuan->id_barang = null; // Remove the item reference
+            $lokasiTujuan->status = 'not_available'; // Update status
+        } else {
+            $lokasiTujuan->status = 'available'; // Update status
+        }
         $lokasiTujuan->save();
 
         // Delete the BarangPindah record
