@@ -28,13 +28,12 @@ class Rak extends Model
     }
 
     /**
-     * Relasi dengan LokasiBarang (rak bisa memiliki banyak lokasi barang)
+     * Relasi dengan BarangMasuk (rak bisa memiliki banyak barang pindah)
      */
-    public function lokasiBarang()
+    public function barangMasuk()
     {
-        return $this->hasMany(LokasiBarang::class);
+        return $this->hasMany(BarangMasuk::class);
     }
-
     /**
      * Relasi dengan BarangPindah (rak bisa memiliki banyak barang pindah)
      */
