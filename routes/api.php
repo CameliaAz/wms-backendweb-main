@@ -10,6 +10,7 @@ use App\Http\Controllers\RakController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\BarangPindahController;
+use App\Http\Controllers\BarangKeluarController;
 
 /*
 |---------------------------------------------------------------------------
@@ -72,3 +73,9 @@ Route::post('barang-pindah', [BarangPindahController::class, 'store']); // Menam
 Route::get('barang-pindah/{id}', [BarangPindahController::class, 'show']); // Mendapatkan detail barang pindah
 Route::put('barang-pindah/{id}', [BarangPindahController::class, 'update']);
 Route::delete('barang-pindah/{id}', [BarangpindahController::class, 'destroy']); // Menghapus barang Pindah
+// Barang Pindah Routes
+Route::get('barang-keluar', [BarangKeluarController::class, 'index']); // Mendapatkan semua barang keluar
+Route::post('barang-keluar', [BarangKeluarController::class, 'store']); // Menambahkan barang keluar
+Route::get('barang-keluar/{id}', [BarangKeluarController::class, 'show']); // Mendapatkan detail barang keluar
+Route::put('barang-keluar/{id}', [BarangKeluarController::class, 'update']);
+Route::delete('barang-keluar/{id}', [BarangKeluarController::class, 'destroy']); // Menghapus barang keluar
