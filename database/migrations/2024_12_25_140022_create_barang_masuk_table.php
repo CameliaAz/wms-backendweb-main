@@ -27,6 +27,8 @@ class CreateBarangMasukTable extends Migration
             $table->foreign('id_supplier')->references('id')->on('supplier')->onDelete('cascade');
             $table->foreign('id_tujuan')->references('id')->on('rak')->onDelete('cascade');
             $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade'); // Tambahkan relasi ke users
+            $table->decimal('harga', 10, 2)->default(0); // Harga Beli barang
+            $table->decimal('total', 10, 2)->default(0); // Total harga barang masuk (jumlah_barang_masuk * harga)
         });        
     }
 

@@ -12,13 +12,14 @@ class CreateBarangTable extends Migration
     {
         Schema::create('barang', function (Blueprint $table) {
             $table->id(); // Primary key
+            $table->string('gambar')->nullable(); // Gambar barang
             $table->string('nama_barang'); // Nama barang
             $table->unsignedBigInteger('id_kategori'); // Kolom id_kategori sebagai foreign key
             $table->string('varian'); // Varian barang
             $table->string('ukuran'); // Ukuran barang
             $table->text('deskripsi'); // Deskripsi barang
-            $table->string('gambar')->nullable(); // Gambar barang
-            // $table->decimal('harga', 10, 2); // Harga barang
+            $table->decimal('harga_beli', 10, 2)->default(0); // Harga Beli barang
+            $table->decimal('harga_jual', 10, 2)->default(0); // Harga Jual barang
             $table->timestamps(); // Kolom created_at dan updated_at
 
             // Definisi foreign key untuk kategori

@@ -15,30 +15,42 @@ class BarangSeeder extends Seeder
         $data = [
             [
                 'id' => 1,
-                'nama_barang' => 'Contoh Barang 1',
+                'nama_barang' => 'Shampoo Herbal Anti Rontok',
                 'id_kategori' => 3, // ID untuk kategori 'Haircare'
-                'varian' => 'Varian A',
-                'ukuran' => 'Medium',
-                'deskripsi' => 'Deskripsi barang 1',
-                'gambar' => 'gambar1.jpg',
+                'varian' => 'Herbal',
+                'ukuran' => '300ml',
+                'deskripsi' => 'Shampoo herbal yang dirancang khusus untuk mengurangi kerontokan rambut dan merawat kulit kepala.',
+                'gambar' => 'shampoo-herbal.jpg',
+                'harga_beli' => 80000.00, // Harga beli
+                'harga_jual' => 120000.00, // Harga jual
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'id' => 2,
-                'nama_barang' => 'Contoh Barang 2',
+                'nama_barang' => 'Parfum Wanita Eau de Parfum',
                 'id_kategori' => 4, // ID untuk kategori 'Parfum'
-                'varian' => 'Varian B',
-                'ukuran' => 'Large',
-                'deskripsi' => 'Deskripsi barang 2',
-                'gambar' => 'gambar2.jpg',
+                'varian' => 'Floral Bouquet',
+                'ukuran' => '50ml',
+                'deskripsi' => 'Parfum wanita dengan aroma bunga segar yang tahan lama dan elegan.',
+                'gambar' => 'parfum-wanita.jpg',
+                'harga_beli' => 150000.00,
+                'harga_jual' => 250000.00,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'id' => 3,
-                'nama_barang' => 'Contoh Barang 3',
+                'nama_barang' => 'Body Lotion Moisturizing',
                 'id_kategori' => 5, // ID untuk kategori 'Bodycare'
-                'varian' => 'Varian C',
-                'ukuran' => 'Small',
-                'deskripsi' => 'Deskripsi barang 3',
-                'gambar' => 'gambar3.jpg',
+                'varian' => 'Vanilla',
+                'ukuran' => '200ml',
+                'deskripsi' => 'Body lotion yang memberikan kelembapan maksimal dengan aroma vanilla yang menyegarkan.',
+                'gambar' => 'body-lotion-vanilla.jpg',
+                'harga_beli' => 60000.00,
+                'harga_jual' => 95000.00,
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
         ];
 
