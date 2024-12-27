@@ -10,66 +10,33 @@ use Illuminate\Support\Facades\Storage;
 class BarangController extends Controller
 {
     /**
-     * Menampilkan daftar semua barang.
+     * Menampilkan daftar semua barang dengan join ke tabel kategori.
      *
      * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        // Mengambil semua data barang
-        $barangs = Barang::with('kategori')->get(); // Mengambil barang beserta data kategori terkait
+        // Mengambil semua data barang dengan join ke kategori
+        $barangs = Barang::join('kategori', 'barang.id_kategori', '=', 'kategori.id')
+            ->select('barang.*', 'kategori.nama_kat') // Ambil data barang dan nama kategori
+            ->get();
+
         return response()->json($barangs);
     }
 
     /**
-     * Menyimpan data barang baru.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        // Validasi input
-        $request->validate([
-            'nama_barang' => 'required|string|max:255',
-            'id_kategori' => 'required|exists:kategori,id', // Pastikan kategori valid
-            'varian' => 'required|string|max:255',
-            'ukuran' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
-        ]);
-
-        // Menyimpan gambar jika ada
-        if ($request->hasFile('gambar')) {
-            // Menyimpan file ke disk 'public/gambar'
-            $gambar = $request->file('gambar')->store('gambar', 'public'); // Gunakan 'public' disk
-        } else {
-            $gambar = null; // Tidak ada gambar, set null
-        }
-
-        // Menyimpan data barang baru
-        $barang = Barang::create([
-            'nama_barang' => $request->nama_barang,
-            'id_kategori' => $request->id_kategori,
-            'varian' => $request->varian,
-            'ukuran' => $request->ukuran,
-            'deskripsi' => $request->deskripsi,
-            'gambar' => $gambar
-        ]);
-
-        return response()->json($barang, 201);
-    }
-
-    /**
-     * Menampilkan data barang berdasarkan ID.
+     * Menampilkan data barang berdasarkan ID dengan join ke tabel kategori.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
-        // Menampilkan data barang berdasarkan ID
-        $barang = Barang::with('kategori')->find($id);
+        // Mengambil data barang berdasarkan ID dengan join ke kategori
+        $barang = Barang::join('kategori', 'barang.id_kategori', '=', 'kategori.id')
+            ->select('barang.*', 'kategori.nama_kat') // Ambil data barang dan nama kategori
+            ->where('barang.id', $id)
+            ->first();
 
         if (!$barang) {
             return response()->json(['message' => 'Barang tidak ditemukan'], 404);
@@ -79,15 +46,13 @@ class BarangController extends Controller
     }
 
     /**
-     * Mengupdate data barang.
+     * Menyimpan data barang baru dengan validasi kategori.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function store(Request $request)
     {
-        // Validasi input
         $request->validate([
             'nama_barang' => 'required|string|max:255',
             'id_kategori' => 'required|exists:kategori,id',
@@ -97,28 +62,63 @@ class BarangController extends Controller
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
-        // Mencari barang berdasarkan ID
+        if ($request->hasFile('gambar')) {
+            $gambar = $request->file('gambar')->store('gambar', 'public');
+        } else {
+            $gambar = null;
+        }
+
+        $barang = Barang::create([
+            'nama_barang' => $request->nama_barang,
+            'id_kategori' => $request->id_kategori,
+            'varian' => $request->varian,
+            'ukuran' => $request->ukuran,
+            'deskripsi' => $request->deskripsi,
+            'gambar' => $gambar
+        ]);
+
+        // Mengambil data barang yang baru dibuat beserta kategori terkait
+        $barangWithKategori = Barang::join('kategori', 'barang.id_kategori', '=', 'kategori.id')
+            ->select('barang.*', 'kategori.nama_kat')
+            ->where('barang.id', $barang->id)
+            ->first();
+
+        return response()->json($barangWithKategori, 201);
+    }
+
+    /**
+     * Mengupdate data barang dengan join ke tabel kategori.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'nama_barang' => 'required|string|max:255',
+            'id_kategori' => 'required|exists:kategori,id',
+            'varian' => 'required|string|max:255',
+            'ukuran' => 'required|string|max:255',
+            'deskripsi' => 'required|string',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+        ]);
+
         $barang = Barang::find($id);
 
         if (!$barang) {
             return response()->json(['message' => 'Barang tidak ditemukan'], 404);
         }
 
-        // Menyimpan gambar baru jika ada
         if ($request->hasFile('gambar')) {
-            // Hapus gambar lama jika ada
             if ($barang->gambar) {
-                // Hapus file lama
                 Storage::delete($barang->gambar);
             }
-            // Menyimpan file gambar baru
             $gambar = $request->file('gambar')->store('gambar', 'public');
         } else {
-            // Jika tidak ada gambar baru, gunakan gambar lama
             $gambar = $barang->gambar;
         }
 
-        // Update data barang
         $barang->update([
             'nama_barang' => $request->nama_barang,
             'id_kategori' => $request->id_kategori,
@@ -128,7 +128,13 @@ class BarangController extends Controller
             'gambar' => $gambar
         ]);
 
-        return response()->json($barang);
+        // Mengambil data barang yang telah diperbarui beserta kategori terkait
+        $barangWithKategori = Barang::join('kategori', 'barang.id_kategori', '=', 'kategori.id')
+            ->select('barang.*', 'kategori.nama_kat')
+            ->where('barang.id', $barang->id)
+            ->first();
+
+        return response()->json($barangWithKategori);
     }
 
     /**
