@@ -14,12 +14,14 @@ class Barang extends Model
 
     // Kolom yang dapat diisi secara mass-assignment
     protected $fillable = [
+        'gambar',
         'nama_barang',
         'id_kategori',
         'varian',
         'ukuran',
         'deskripsi',
-        'gambar',
+        'harga_beli',
+        'harga_jual'
     ];
 
     // Relasi ke Kategori

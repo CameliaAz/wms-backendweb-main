@@ -54,12 +54,14 @@ class BarangController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'nama_barang' => 'required|string|max:255',
             'id_kategori' => 'required|exists:kategori,id',
             'varian' => 'required|string|max:255',
             'ukuran' => 'required|string|max:255',
             'deskripsi' => 'required|string',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'harga_beli' => 'required|numeric|min:0',
+            'harga_jual' => 'required|numeric|min:0'
         ]);
 
         if ($request->hasFile('gambar')) {
@@ -96,12 +98,14 @@ class BarangController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'nama_barang' => 'required|string|max:255',
             'id_kategori' => 'required|exists:kategori,id',
             'varian' => 'required|string|max:255',
             'ukuran' => 'required|string|max:255',
             'deskripsi' => 'required|string',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'harga_beli' => 'required|numeric|min:0',
+            'harga_jual' => 'required|numeric|min:0'
         ]);
 
         $barang = Barang::find($id);

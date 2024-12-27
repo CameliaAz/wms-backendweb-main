@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -15,22 +14,34 @@ class KategoriSeeder extends Seeder
     {
         $data = [
             [
+                'id' => 1,
+                'nama_kat' => 'Haircare', // Kategori untuk perawatan rambut
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 2,
+                'nama_kat' => 'Skincare', // Kategori untuk perawatan kulit
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 'id' => 3,
-                'nama_kat' => 'Haircare',
-                'created_at' => '2024-12-22 12:25:03',
-                'updated_at' => '2024-12-22 12:25:03',
+                'nama_kat' => 'Makeup', // Kategori untuk produk makeup
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'id' => 4,
-                'nama_kat' => 'Parfum',
-                'created_at' => '2024-12-22 12:25:15',
-                'updated_at' => '2024-12-22 12:25:15',
+                'nama_kat' => 'Fragrance', // Kategori untuk parfum
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'id' => 5,
-                'nama_kat' => 'Bodycare',
-                'created_at' => '2024-12-22 12:25:31',
-                'updated_at' => '2024-12-22 12:25:31',
+                'nama_kat' => 'Bodycare', // Kategori untuk perawatan tubuh
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
         ];
 

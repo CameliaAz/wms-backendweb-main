@@ -72,8 +72,15 @@ class BarangKeluarController extends Controller
     // Kurangi stok di rak
     $rak->jumlah -= $request->jumlah_keluar;
 
-    // Tentukan status rak berdasarkan jumlah barang
-    $rak->status = $rak->jumlah > 0 ? 'available' : 'not_available';
+    // Jika stok rak habis, ubah ID Barang di rak menjadi kosong (null)
+    if ($rak->jumlah == 0) {
+        $rak->id_barang = null;
+        $rak->status = 'not_available'; // Rak dianggap tidak tersedia jika stok habis
+    } else {
+        $rak->status = 'available'; // Rak tetap tersedia jika stok masih ada
+    }
+
+    // Simpan perubahan rak
     $rak->save();
 
     // Simpan data barang keluar
@@ -88,6 +95,7 @@ class BarangKeluarController extends Controller
 }
 
 
+
     /**
      * Update the specified BarangKeluar in storage.
      *
@@ -97,6 +105,7 @@ class BarangKeluarController extends Controller
      */
     public function update(Request $request, $id)
 {
+    // Validasi input
     $request->validate([
         'id_barang' => 'required|exists:barang,id',
         'id_rak' => 'required|exists:rak,id',
@@ -106,31 +115,47 @@ class BarangKeluarController extends Controller
         'tanggal_keluar' => 'required|date',
     ]);
 
-    // Find the existing BarangKeluar record
+    // Temukan record barang keluar yang akan diupdate
     $barangKeluar = BarangKeluar::findOrFail($id);
+    $rak = Rak::findOrFail($request->id_rak);
+
+    // Simpan jumlah barang yang sudah keluar sebelumnya
     $oldJumlahKeluar = $barangKeluar->jumlah_keluar;
 
-    // Update the BarangKeluar record
+    // Update barang keluar dengan data baru
     $barangKeluar->update($request->all());
 
-    // Get the related Rak and Barang
-    $rak = Rak::findOrFail($request->id_rak);
+    // Ambil data barang yang terkait dengan pengeluaran
     $barang = Barang::findOrFail($request->id_barang);
 
-    // Calculate the difference in quantity
-    $quantityDifference = $request->jumlah_keluar - $oldJumlahKeluar;
-
-    // Update the stock in the rak (undo the previous operation and apply the new one)
-    $rak->jumlah += $oldJumlahKeluar; // Add back the previous amount
-    $rak->jumlah -= $request->jumlah_keluar; // Subtract the new quantity
-
-    // Make sure stock does not go below zero
-    if ($rak->jumlah < 0) {
-        return response()->json(['message' => 'Not enough stock available in the rak.'], 400);
+    // Cek apakah stok barang cukup di rak
+    if ($rak->jumlah <= 0) {
+        return response()->json(['message' => 'Stok di rak ini kosong, pengeluaran tidak bisa dilakukan.'], 400);
     }
 
-    // Update rak status if necessary
-    $rak->status = $rak->jumlah > 0 ? 'available' : 'not_available';
+    // Cek apakah jumlah pengeluaran tidak melebihi jumlah stok
+    if ($rak->jumlah < $request->jumlah_keluar) {
+        return response()->json(['message' => 'Jumlah pengeluaran melebihi stok yang tersedia di rak.'], 400);
+    }
+
+    // Logika untuk mengembalikan stok jika jumlah pengeluaran berkurang
+    if ($request->jumlah_keluar < $oldJumlahKeluar) {
+        // Jika jumlah pengeluaran berkurang, tambahkan kembali stok ke rak
+        $rak->jumlah += ($oldJumlahKeluar - $request->jumlah_keluar);
+    } else if ($request->jumlah_keluar > $oldJumlahKeluar) {
+        // Jika jumlah pengeluaran bertambah, kurangi stok dari rak
+        $rak->jumlah -= ($request->jumlah_keluar - $oldJumlahKeluar);
+    }
+
+    // Jika stok rak habis setelah update, ubah ID Barang menjadi null dan status rak menjadi 'not_available'
+    if ($rak->jumlah == 0) {
+        $rak->id_barang = null;
+        $rak->status = 'not_available'; // Rak dianggap tidak tersedia
+    } else {
+        $rak->status = 'available'; // Rak tetap tersedia jika stok masih ada
+    }
+
+    // Simpan perubahan rak
     $rak->save();
 
     return response()->json([
@@ -140,6 +165,7 @@ class BarangKeluarController extends Controller
         'barang' => $barang
     ]);
 }
+
 
 
     /**
