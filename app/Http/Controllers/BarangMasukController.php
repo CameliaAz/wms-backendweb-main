@@ -6,6 +6,7 @@ use App\Models\BarangMasuk;
 use App\Models\Rak;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Models\Kategori;
 use App\Models\Barang;
 use Illuminate\Http\Request;
 
@@ -17,12 +18,15 @@ class BarangMasukController extends Controller
         $barangMasuk = BarangMasuk::join('barang', 'barang_masuk.id_barang', '=', 'barang.id')
             ->join('rak', 'barang_masuk.id_tujuan', '=', 'rak.id')
             ->join('supplier', 'barang_masuk.id_supplier', '=', 'supplier.id')
+            ->join('kategori', 'barang.id_kategori', '=', 'kategori.id')
             ->join('users', 'barang_masuk.id_user', '=', 'users.id')
             ->select(
                 'barang_masuk.*',
                 'barang.nama_barang',
                 'rak.nama_rak',
+                'rak.nama_lokasi',
                 'supplier.nama_sup',
+                'kategori.nama_kat',
                 'users.name as user_name'
             )
             ->get();
