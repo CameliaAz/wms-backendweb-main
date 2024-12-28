@@ -47,19 +47,11 @@ public function show($id)
     {
         $request->validate([
             'nama_rak' => 'required|string|max:255',
-            'id_barang' => 'required|exists:barang,id', // Validasi bahwa barang ada
-            'jumlah' => 'required|integer|min:0',
+            'nama_lokasi' => 'required|string|max:255',
             'status' => 'required|in:available,not_available',
-            'exp' => 'nullable|date',
         ]);
 
-        $rak = Rak::create([
-            'nama_rak' => $request->nama_rak,
-            'id_barang' => $request->id_barang,
-            'jumlah' => $request->jumlah,
-            'status' => $request->status,
-            'exp' => $request->exp,
-        ]);
+        $rak = Rak::create($request->only(['nama_rak', 'nama_lokasi', 'status']));
 
         // Ambil data rak yang baru ditambahkan dengan join ke tabel barang
         $rakWithBarang = Rak::join('barang', 'rak.id_barang', '=', 'barang.id')
