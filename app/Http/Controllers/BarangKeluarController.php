@@ -8,6 +8,7 @@ use App\Models\Rak;
 use App\Models\User;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BarangKeluarController extends Controller
 {
@@ -18,17 +19,16 @@ class BarangKeluarController extends Controller
      */
     public function index()
     {
-        // Fetch all BarangKeluar records along with their relationships (Barang, Rak, User, Kategori)
         $barangKeluar = BarangKeluar::join('barang', 'barang_keluar.id_barang', '=', 'barang.id')
             ->join('rak', 'barang_keluar.id_rak', '=', 'rak.id')
             ->join('users', 'barang_keluar.id_user', '=', 'users.id')
-            ->join('kategori', 'barang.id_kategori', '=', 'kategori.id')  // Join dengan kategori
+            ->join('kategori', 'barang.id_kategori', '=', 'kategori.id')
             ->select(
                 'barang_keluar.*',
                 'barang.nama_barang',
                 'rak.nama_rak',
                 'users.name as user_name',
-                'kategori.nama_kat'  // Menambahkan kategori ke dalam hasil query
+                'kategori.nama_kat'
             )
             ->get();
 
@@ -43,7 +43,6 @@ class BarangKeluarController extends Controller
      */
     public function show($id)
     {
-        // Find BarangKeluar by ID and include related data
         $barangKeluar = BarangKeluar::join('barang', 'barang_keluar.id_barang', '=', 'barang.id')
             ->join('rak', 'barang_keluar.id_rak', '=', 'rak.id')
             ->join('users', 'barang_keluar.id_user', '=', 'users.id')
@@ -68,53 +67,59 @@ class BarangKeluarController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi input
         $request->validate([
             'id_barang' => 'required|exists:barang,id',
-            'id_rak' => 'required|exists:rak,id',
-            'id_user' => 'required|exists:users,id',
             'jumlah_keluar' => 'required|integer|min:1',
             'alasan' => 'required|string|max:255',
             'tanggal_keluar' => 'required|date',
         ]);
 
-        // Ambil data rak dan barang
-        $rak = Rak::findOrFail($request->id_rak);
-        $barang = Barang::findOrFail($request->id_barang);
+        if (!$request->has('id_rak')) {
+            $rak = Rak::where('id_barang', $request->id_barang)
+                      ->where('jumlah', '>=', $request->jumlah_keluar)
+                      ->first();
 
-        // Cek apakah stok barang cukup di rak
-        if ($rak->jumlah <= 0) {
-            return response()->json(['message' => 'Stok di rak ini kosong, pengeluaran tidak bisa dilakukan.'], 400);
+            if (!$rak) {
+                return response()->json(['message' => 'Tidak ada rak yang memiliki stok barang yang cukup.'], 400);
+            }
+        } else {
+            $rak = Rak::findOrFail($request->id_rak);
+
+            if ($rak->id_barang !== $request->id_barang) {
+                return response()->json(['message' => 'Barang yang dipilih tidak sesuai dengan rak.'], 400);
+            }
         }
 
-        // Cek apakah jumlah pengeluaran tidak melebihi jumlah stok
+        $barang = Barang::findOrFail($request->id_barang);
+
         if ($rak->jumlah < $request->jumlah_keluar) {
             return response()->json(['message' => 'Jumlah pengeluaran melebihi stok yang tersedia di rak.'], 400);
         }
 
-        // Kurangi stok di rak
-        $rak->jumlah -= $request->jumlah_keluar;
+        DB::transaction(function () use ($request, $rak, $barang) {
+            $rak->jumlah -= $request->jumlah_keluar;
 
-        // Jika stok rak habis, ubah ID Barang di rak menjadi kosong (null)
-        if ($rak->jumlah == 0) {
-            $rak->id_barang = null;
-            $rak->status = 'not_available'; // Rak dianggap tidak tersedia jika stok habis
-        } else {
-            $rak->status = 'available'; // Rak tetap tersedia jika stok masih ada
-        }
+            if ($rak->jumlah == 0) {
+                $rak->id_barang = null;
+                $rak->status = 'not_available';
+            }
 
-        // Simpan perubahan rak
-        $rak->save();
+            $rak->save();
 
-        // Simpan data barang keluar
-        $barangKeluar = BarangKeluar::create($request->all());
+            $rak->jumlah -= $request->jumlah_keluar;
+            $rak->save();
 
-        return response()->json([
-            'message' => 'Barang keluar berhasil ditambahkan.',
-            'barang_keluar' => $barangKeluar,
-            'rak' => $rak,
-            'barang' => $barang
-        ], 201);
+            BarangKeluar::create([
+                'id_barang' => $request->id_barang,
+                'id_rak' => $rak->id,
+                'id_user' => $request->id_user,
+                'jumlah_keluar' => $request->jumlah_keluar,
+                'alasan' => $request->alasan,
+                'tanggal_keluar' => $request->tanggal_keluar,
+            ]);
+        });
+
+        return response()->json(['message' => 'Barang keluar berhasil ditambahkan.'], 201);
     }
 
     /**
@@ -126,65 +131,48 @@ class BarangKeluarController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validasi input
         $request->validate([
             'id_barang' => 'required|exists:barang,id',
-            'id_rak' => 'required|exists:rak,id',
-            'id_user' => 'required|exists:users,id',
             'jumlah_keluar' => 'required|integer|min:1',
             'alasan' => 'required|string|max:255',
             'tanggal_keluar' => 'required|date',
         ]);
 
-        // Temukan record barang keluar yang akan diupdate
         $barangKeluar = BarangKeluar::findOrFail($id);
-        $rak = Rak::findOrFail($request->id_rak);
 
-        // Simpan jumlah barang yang sudah keluar sebelumnya
-        $oldJumlahKeluar = $barangKeluar->jumlah_keluar;
+        if (!$request->has('id_rak')) {
+            $rak = Rak::where('id_barang', $request->id_barang)
+                      ->where('jumlah', '>=', $request->jumlah_keluar)
+                      ->first();
 
-        // Update barang keluar dengan data baru
-        $barangKeluar->update($request->all());
-
-        // Ambil data barang yang terkait dengan pengeluaran
-        $barang = Barang::findOrFail($request->id_barang);
-
-        // Cek apakah stok barang cukup di rak
-        if ($rak->jumlah <= 0) {
-            return response()->json(['message' => 'Stok di rak ini kosong, pengeluaran tidak bisa dilakukan.'], 400);
-        }
-
-        // Cek apakah jumlah pengeluaran tidak melebihi jumlah stok
-        if ($rak->jumlah < $request->jumlah_keluar) {
-            return response()->json(['message' => 'Jumlah pengeluaran melebihi stok yang tersedia di rak.'], 400);
-        }
-
-        // Logika untuk mengembalikan stok jika jumlah pengeluaran berkurang
-        if ($request->jumlah_keluar < $oldJumlahKeluar) {
-            // Jika jumlah pengeluaran berkurang, tambahkan kembali stok ke rak
-            $rak->jumlah += ($oldJumlahKeluar - $request->jumlah_keluar);
-        } else if ($request->jumlah_keluar > $oldJumlahKeluar) {
-            // Jika jumlah pengeluaran bertambah, kurangi stok dari rak
-            $rak->jumlah -= ($request->jumlah_keluar - $oldJumlahKeluar);
-        }
-
-        // Jika stok rak habis setelah update, ubah ID Barang menjadi null dan status rak menjadi 'not_available'
-        if ($rak->jumlah == 0) {
-            $rak->id_barang = null;
-            $rak->status = 'not_available'; // Rak dianggap tidak tersedia
+            if (!$rak) {
+                return response()->json(['message' => 'Tidak ada rak yang memiliki stok barang yang cukup.'], 400);
+            }
         } else {
-            $rak->status = 'available'; // Rak tetap tersedia jika stok masih ada
+            $rak = Rak::findOrFail($request->id_rak);
+
+            if ($rak->id_barang !== $request->id_barang) {
+                return response()->json(['message' => 'Barang yang dipilih tidak sesuai dengan rak.'], 400);
+            }
         }
 
-        // Simpan perubahan rak
-        $rak->save();
+        DB::transaction(function () use ($request, $barangKeluar, $rak) {
+            $rak->jumlah += $barangKeluar->jumlah_keluar; // Kembalikan stok lama ke rak
 
-        return response()->json([
-            'message' => 'Barang keluar berhasil diperbarui.',
-            'barang_keluar' => $barangKeluar,
-            'rak' => $rak,
-            'barang' => $barang
-        ]);
+            if ($rak->jumlah == 0) {
+                $rak->id_barang = null;
+                $rak->status = 'not_available';
+            } else {
+                $rak->status = 'available';
+            }
+
+            $rak->jumlah -= $request->jumlah_keluar;
+            $rak->save();
+
+            $barangKeluar->update($request->all());
+        });
+
+        return response()->json(['message' => 'Barang keluar berhasil diperbarui.']);
     }
 
     /**
@@ -195,20 +183,23 @@ class BarangKeluarController extends Controller
      */
     public function destroy($id)
     {
-        // Find the BarangKeluar record
         $barangKeluar = BarangKeluar::findOrFail($id);
-
-        // Get the Rak where the item was taken from
         $rak = Rak::findOrFail($barangKeluar->id_rak);
-        $rak->jumlah += $barangKeluar->jumlah_keluar;
-        $rak->status = $rak->jumlah > 0 ? 'available' : 'not_available';
-        $rak->save();
 
-        // Delete the BarangKeluar record
-        $barangKeluar->delete();
+        DB::transaction(function () use ($barangKeluar, $rak) {
+            $rak->jumlah += $barangKeluar->jumlah_keluar;
 
-        return response()->json([
-            'message' => 'Barang keluar berhasil dihapus.',
-        ]);
+            if ($rak->jumlah == 0) {
+                $rak->id_barang = null;
+                $rak->status = 'not_available';
+            } else {
+                $rak->status = 'available';
+            }
+
+            $rak->save();
+            $barangKeluar->delete();
+        });
+
+        return response()->json(['message' => 'Barang keluar berhasil dihapus.']);
     }
 }
