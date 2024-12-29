@@ -27,6 +27,8 @@ class CreateBarangKeluarTable extends Migration
             $table->integer('jumlah_keluar'); // Jumlah barang keluar
             $table->date('tanggal_keluar'); // Tanggal barang keluar
             $table->string('alasan'); // Alasan barang keluar
+            $table->decimal('harga', 10, 2)->default(0); // Harga Beli barang
+            $table->decimal('total', 10, 2)->default(0); // Total harga barang masuk (jumlah_barang_masuk * harga)
             $table->timestamps(); // Kolom created_at dan updated_at
         });
     }

@@ -9,10 +9,18 @@ class BarangKeluar extends Model
 {
     use HasFactory;
 
-    // Define the table associated with the model
+     /**
+     * Table associated with the model.
+     *
+     * @var string
+     */
     protected $table = 'barang_keluar';
 
-    // Define the fillable attributes for mass assignment
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'id_barang',
         'id_rak',
@@ -20,8 +28,9 @@ class BarangKeluar extends Model
         'jumlah_keluar',
         'tanggal_keluar',
         'alasan',
+        'harga',
+        'total',
     ];
-
     /**
      * Define the relationship with the Barang model (one to many inverse)
      */
@@ -44,5 +53,25 @@ class BarangKeluar extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    /**
+     * Accessor for formatted total value.
+     *
+     * @return string
+     */
+    public function getFormattedTotalAttribute()
+    {
+        return number_format($this->total, 2, ',', '.');
+    }
+
+    /**
+     * Mutator to automatically calculate the total based on jumlah_keluar and harga.
+     *
+     * @return void
+     */
+    public function setTotalAttribute()
+    {
+        $this->attributes['total'] = $this->jumlah_keluar * $this->harga;
     }
 }

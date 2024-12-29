@@ -66,61 +66,77 @@ class BarangKeluarController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        $request->validate([
-            'id_barang' => 'required|exists:barang,id',
-            'jumlah_keluar' => 'required|integer|min:1',
-            'alasan' => 'required|string|max:255',
-            'tanggal_keluar' => 'required|date',
-        ]);
+{
+    // Validate the request data
+    $request->validate([
+        'id_barang' => 'required|exists:barang,id',
+        'jumlah_keluar' => 'required|integer|min:1',
+        'alasan' => 'required|string|max:255',
+        'tanggal_keluar' => 'required|date',
+        'id_user' => 'required|exists:users,id',
+    ]);
 
-        if (!$request->has('id_rak')) {
-            $rak = Rak::where('id_barang', $request->id_barang)
-                      ->where('jumlah', '>=', $request->jumlah_keluar)
-                      ->first();
+    // Find the Barang and Rak
+    $barang = Barang::findOrFail($request->id_barang);
 
-            if (!$rak) {
-                return response()->json(['message' => 'Tidak ada rak yang memiliki stok barang yang cukup.'], 400);
-            }
-        } else {
-            $rak = Rak::findOrFail($request->id_rak);
-
-            if ($rak->id_barang !== $request->id_barang) {
-                return response()->json(['message' => 'Barang yang dipilih tidak sesuai dengan rak.'], 400);
-            }
-        }
-
-        $barang = Barang::findOrFail($request->id_barang);
-
-        if ($rak->jumlah < $request->jumlah_keluar) {
-            return response()->json(['message' => 'Jumlah pengeluaran melebihi stok yang tersedia di rak.'], 400);
-        }
-
-        DB::transaction(function () use ($request, $rak, $barang) {
-            $rak->jumlah -= $request->jumlah_keluar;
-
-            if ($rak->jumlah == 0) {
-                $rak->id_barang = null;
-                $rak->status = 'not_available';
-            }
-
-            $rak->save();
-
-            $rak->jumlah -= $request->jumlah_keluar;
-            $rak->save();
-
-            BarangKeluar::create([
-                'id_barang' => $request->id_barang,
-                'id_rak' => $rak->id,
-                'id_user' => $request->id_user,
-                'jumlah_keluar' => $request->jumlah_keluar,
-                'alasan' => $request->alasan,
-                'tanggal_keluar' => $request->tanggal_keluar,
-            ]);
-        });
-
-        return response()->json(['message' => 'Barang keluar berhasil ditambahkan.'], 201);
+    // Cek apakah harga barang ada
+    if ($barang->harga_jual == 0 || $barang->harga_jual == null) {
+        return response()->json(['message' => 'Harga barang tidak valid.'], 400);
     }
+
+    // Validate rak
+    if (!$request->has('id_rak')) {
+        $rak = Rak::where('id_barang', $request->id_barang)
+                  ->where('jumlah', '>=', $request->jumlah_keluar)
+                  ->first();
+
+        if (!$rak) {
+            return response()->json(['message' => 'Tidak ada rak yang memiliki stok barang yang cukup.'], 400);
+        }
+    } else {
+        $rak = Rak::findOrFail($request->id_rak);
+
+        if ($rak->id_barang !== $request->id_barang) {
+            return response()->json(['message' => 'Barang yang dipilih tidak sesuai dengan rak.'], 400);
+        }
+    }
+
+    // Validate stock in rak
+    if ($rak->jumlah < $request->jumlah_keluar) {
+        return response()->json(['message' => 'Jumlah pengeluaran melebihi stok yang tersedia di rak.'], 400);
+    }
+
+    // Calculate total (using price from Barang model)
+    $total = $barang->harga_jual * $request->jumlah_keluar;
+
+    // Use transaction to ensure data consistency
+    DB::transaction(function () use ($request, $rak, $barang, $total) {
+        // Update rak stock
+        $rak->jumlah -= $request->jumlah_keluar;
+
+        if ($rak->jumlah == 0) {
+            $rak->id_barang = null;
+            $rak->status = 'available';
+        }
+
+        $rak->save();
+
+        // Create BarangKeluar with price and total
+        BarangKeluar::create([
+            'id_barang' => $request->id_barang,
+            'id_rak' => $rak->id,
+            'id_user' => $request->id_user,
+            'jumlah_keluar' => $request->jumlah_keluar,
+            'alasan' => $request->alasan,
+            'tanggal_keluar' => $request->tanggal_keluar,
+            'harga' => $barang->harga_jual,  // Save harga
+            'total' => $total, // Add total calculated using barang's harga_jual
+        ]);
+    });
+
+    return response()->json(['message' => 'Barang keluar berhasil ditambahkan.'], 201);
+}
+
 
     /**
      * Update the specified BarangKeluar in storage.
@@ -130,50 +146,72 @@ class BarangKeluarController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'id_barang' => 'required|exists:barang,id',
-            'jumlah_keluar' => 'required|integer|min:1',
-            'alasan' => 'required|string|max:255',
-            'tanggal_keluar' => 'required|date',
-        ]);
+{
+    // Validate the request data
+    $request->validate([
+        'id_barang' => 'required|exists:barang,id',
+        'jumlah_keluar' => 'required|integer|min:1',
+        'alasan' => 'required|string|max:255',
+        'tanggal_keluar' => 'required|date',
+        'id_user' => 'required|exists:users,id',
+    ]);
 
-        $barangKeluar = BarangKeluar::findOrFail($id);
+    // Find BarangKeluar and Barang
+    $barangKeluar = BarangKeluar::findOrFail($id);
+    $barang = Barang::findOrFail($request->id_barang);
+    $total = $barang->harga_jual * $request->jumlah_keluar;
 
-        if (!$request->has('id_rak')) {
-            $rak = Rak::where('id_barang', $request->id_barang)
-                      ->where('jumlah', '>=', $request->jumlah_keluar)
-                      ->first();
+    // Find the rak for the current BarangKeluar
+    $rak = Rak::findOrFail($barangKeluar->id_rak);
 
-            if (!$rak) {
-                return response()->json(['message' => 'Tidak ada rak yang memiliki stok barang yang cukup.'], 400);
-            }
+    // Add the old quantity back to the rak
+    $rak->jumlah += $barangKeluar->jumlah_keluar;
+    
+    // Debugging: Check the updated rak quantity after adding the old quantity back
+    // \Log::info('Rak updated stock: ' . $rak->jumlah);
+    
+    // Check if the rak has enough stock after adding the old quantity back
+    if ($rak->jumlah < $request->jumlah_keluar) {
+        return response()->json(['message' => 'Tidak ada rak yang memiliki stok barang yang cukup.'], 400);
+    }
+
+    // Begin transaction to ensure consistency
+    DB::transaction(function () use ($request, $barangKeluar, $rak, $total, $barang) {
+        // Step 1: Subtract the new quantity from rak stock
+        $rak->jumlah -= $request->jumlah_keluar;
+
+        // Step 2: Update rak status and make sure ID barang is set correctly
+        if ($rak->jumlah > 0) {
+            $rak->status = 'available'; // Rak still has stock
         } else {
-            $rak = Rak::findOrFail($request->id_rak);
-
-            if ($rak->id_barang !== $request->id_barang) {
-                return response()->json(['message' => 'Barang yang dipilih tidak sesuai dengan rak.'], 400);
-            }
+            $rak->status = 'not_available'; // Rak has no stock left
+            $rak->id_barang = null; // Clear ID barang only if rak is empty
+        }
+        
+        // Update ID barang to ensure it's correctly set if there is still stock
+        if ($rak->jumlah > 0) {
+            $rak->id_barang = $barang->id; // Ensure ID barang is correctly set
         }
 
-        DB::transaction(function () use ($request, $barangKeluar, $rak) {
-            $rak->jumlah += $barangKeluar->jumlah_keluar; // Kembalikan stok lama ke rak
+        $rak->save(); // Save the updated rak stock
+        
+        // Step 3: Update BarangKeluar
+        $barangKeluar->update([
+            'id_barang' => $request->id_barang,
+            'id_rak' => $rak->id,
+            'id_user' => $request->id_user,
+            'jumlah_keluar' => $request->jumlah_keluar,
+            'alasan' => $request->alasan,
+            'tanggal_keluar' => $request->tanggal_keluar,
+            'total' => $total, // Update total with the new quantity
+        ]);
+    });
 
-            if ($rak->jumlah == 0) {
-                $rak->id_barang = null;
-                $rak->status = 'not_available';
-            } else {
-                $rak->status = 'available';
-            }
+    // Return success message
+    return response()->json(['message' => 'Barang keluar berhasil diperbarui.']);
+}
 
-            $rak->jumlah -= $request->jumlah_keluar;
-            $rak->save();
-
-            $barangKeluar->update($request->all());
-        });
-
-        return response()->json(['message' => 'Barang keluar berhasil diperbarui.']);
-    }
+    
 
     /**
      * Remove the specified BarangKeluar from storage.
@@ -185,21 +223,27 @@ class BarangKeluarController extends Controller
     {
         $barangKeluar = BarangKeluar::findOrFail($id);
         $rak = Rak::findOrFail($barangKeluar->id_rak);
-
+    
         DB::transaction(function () use ($barangKeluar, $rak) {
+            // Add the jumlah_keluar back to the rak stock
             $rak->jumlah += $barangKeluar->jumlah_keluar;
-
-            if ($rak->jumlah == 0) {
-                $rak->id_barang = null;
-                $rak->status = 'not_available';
-            } else {
+    
+            // Update rak status and ensure the ID_barang is set correctly
+            if ($rak->jumlah > 0) {
                 $rak->status = 'available';
+                $rak->id_barang = $barangKeluar->id_barang; // Set the id_barang back to the rak
+            } else {
+                $rak->status = 'not_available';
+                $rak->id_barang = null; // If rak is empty, clear the id_barang
             }
-
-            $rak->save();
+    
+            $rak->save(); // Save the updated rak stock and ID barang
+    
+            // Delete the BarangKeluar record
             $barangKeluar->delete();
         });
-
+    
         return response()->json(['message' => 'Barang keluar berhasil dihapus.']);
     }
+    
 }
