@@ -41,7 +41,8 @@ class SupplierController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        return response()->json($supplier, 201);
+        // Bungkus respons dalam properti `data`
+        return response()->json(['data' => $supplier], 201);
     }
 
     // Mengupdate data supplier

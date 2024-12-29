@@ -19,7 +19,7 @@ class CreateRakTable extends Migration
             $table->string('nama_rak'); // Nama Rak
             $table->string('nama_lokasi'); // Nama Lokasi
             $table->integer('jumlah')->default(0); // Jumlah stok
-            $table->enum('status', ['available', 'not_available'])->default('not_available');
+            $table->enum('status', ['available', 'not_available'])->default('available');
             $table->date('exp')->nullable(); // Kolom Exp (tanggal kedaluwarsa)
             $table->timestamps();
 

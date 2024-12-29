@@ -55,12 +55,6 @@ Route::post('barang', [BarangController::class, 'store']);
 Route::get('barang/{id}', [BarangController::class, 'show']);
 Route::put('barang/{id}', [BarangController::class, 'update']);
 Route::delete('barang/{id}', [BarangController::class, 'destroy']);
-// Barang Routes
-Route::get('barang', [BarangController::class, 'index']);
-Route::post('barang', [BarangController::class, 'store']);
-Route::get('barang/{id}', [BarangController::class, 'show']);
-Route::put('barang/{id}', [BarangController::class, 'update']);
-Route::delete('barang/{id}', [BarangController::class, 'destroy']);
 // Barang Masuk Routes
 Route::get('barang-masuk', [BarangMasukController::class, 'index']); // Mendapatkan semua barang masuk
 Route::post('barang-masuk', [BarangMasukController::class, 'store']); // Menambahkan barang masuk

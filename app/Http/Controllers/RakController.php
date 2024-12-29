@@ -44,31 +44,45 @@ public function show($id)
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        $request->validate([
-            'nama_rak' => 'required|string|max:255',
-            'id_barang' => 'required|exists:barang,id', // Validasi bahwa barang ada
-            'jumlah' => 'required|integer|min:0',
-            'status' => 'required|in:available,not_available',
-            'exp' => 'nullable|date',
-        ]);
+{
+    // Validasi input
+    $request->validate([
+        'nama_rak' => 'required|string|max:255',
+        'id_barang' => 'nullable|exists:barang,id', // id_barang bersifat opsional
+        'nama_lokasi' => 'required|string|max:255',
+        'jumlah' => 'required|integer|min:0',
+        'status' => 'required|in:available,not_available',
+        'exp' => 'nullable|date',
+    ]);
 
-        $rak = Rak::create([
-            'nama_rak' => $request->nama_rak,
-            'id_barang' => $request->id_barang,
-            'jumlah' => $request->jumlah,
-            'status' => $request->status,
-            'exp' => $request->exp,
-        ]);
+    // Menambahkan rak baru
+    $rak = Rak::create([
+        'nama_rak' => $request->nama_rak,
+        'id_barang' => $request->id_barang,
+        'nama_lokasi' => $request->nama_lokasi,
+        'jumlah' => $request->jumlah,
+        'status' => $request->status,
+        'exp' => $request->exp,
+    ]);
 
-        // Ambil data rak yang baru ditambahkan dengan join ke tabel barang
+    // Jika rak memiliki id_barang (terkait dengan barang)
+    if ($rak->id_barang) {
+        // Gabungkan data rak dengan tabel barang
         $rakWithBarang = Rak::join('barang', 'rak.id_barang', '=', 'barang.id')
             ->select('rak.*', 'barang.nama_barang', 'barang.varian')
             ->where('rak.id', $rak->id)
             ->first();
-
-        return response()->json($rakWithBarang, 201);
+    } else {
+        // Jika rak tidak terkait dengan barang, hanya ambil data rak
+        $rakWithBarang = $rak;
     }
+
+    // Kirimkan respons dengan pesan sukses
+    return response()->json([
+        'message' => 'Rak berhasil ditambahkan!',
+        'data' => $rakWithBarang
+    ], 201);
+}
 
     /**
      * Mengupdate rak dengan validasi dan join ke barang.
@@ -81,23 +95,34 @@ public function show($id)
     {
         $rak = Rak::findOrFail($id);
 
+        // Validasi input
         $request->validate([
-            'nama_rak' => 'sometimes|required|string|max:255',
-            'id_barang' => 'sometimes|required|exists:barang,id', // Validasi bahwa barang ada
-            'jumlah' => 'sometimes|required|integer|min:0',
-            'status' => 'sometimes|required|in:available,not_available',
+            'nama_rak' => 'required|string|max:255',
+            'id_barang' => 'nullable|exists:barang,id', // id_barang bersifat opsional
+            'nama_lokasi' => 'required|string|max:255',
+            'jumlah' => 'required|integer|min:0',
+            'status' => 'required|in:available,not_available',
             'exp' => 'nullable|date',
         ]);
+        $rak->update($request->only(['nama_rak', 'id_barang', 'nama_lokasi', 'jumlah', 'status', 'exp']));
 
-        $rak->update($request->only(['nama_rak', 'id_barang', 'jumlah', 'status', 'exp']));
-
-        // Ambil data rak yang telah diperbarui dengan join ke tabel barang
+        // Jika rak memiliki id_barang (terkait dengan barang)
+    if ($rak->id_barang) {
+        // Gabungkan data rak dengan tabel barang
         $rakWithBarang = Rak::join('barang', 'rak.id_barang', '=', 'barang.id')
             ->select('rak.*', 'barang.nama_barang', 'barang.varian')
             ->where('rak.id', $rak->id)
             ->first();
+    } else {
+        // Jika rak tidak terkait dengan barang, hanya ambil data rak
+        $rakWithBarang = $rak;
+    }
 
-        return response()->json($rakWithBarang);
+    // Kirimkan respons dengan pesan sukses
+    return response()->json([
+        'message' => 'Rak berhasil diubah!',
+        'data' => $rakWithBarang
+    ], 201);
     }
 
     // Menghapus rak
